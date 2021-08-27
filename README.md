@@ -1,3 +1,7 @@
+```
+此库为进阶课8月,2-2代码及笔记.初始代码为git clone -b v3.0.0+monthly-2021-07 --depth 1 https://github.com/substrate-developer-hub/substrate-node-template
+```
+
 # Substrate Node Template
 
 [![Try on playground](https://img.shields.io/badge/Playground-Node_Template-brightgreen?logo=Parity%20Substrate)](https://playground.substrate.dev/?deploy=node-template)
