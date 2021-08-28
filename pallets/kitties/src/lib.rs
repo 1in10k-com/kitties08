@@ -36,6 +36,9 @@ pub mod pallet {
     //b11.1
         KittyCreate(T::AccountId, KittyIndex),
     //b11.1,1705e 把之前用到的数据,如error(b11.2),event加到对应的定义里去. 但视频尝试此时编译会报错associated type `Randomness' not found
+    // ccc1.3
+        KittyTransfer(T::AccountId, T::AccountId, KittyIndex)
+    // ccc1.3
     }
 
     #[pallet::storage]
@@ -58,6 +61,13 @@ pub mod pallet {
     //b11.2
         KittiesCountOverflow,
     //b11.2
+    // ccc1.2
+        NotOwner,
+    // ccc1.2
+    // ccc2.2
+        SameParentIndex,
+        InvalidKittyIndex,
+    // ccc2.2
     }
 
     #[pallet::call]
@@ -90,8 +100,63 @@ pub mod pallet {
         Self::deposit_event(Event::KittyCreate(who, kitty_id));
         Ok(())
     //b10,1533e 最后需要对外抛出一个event,让前端js或dapp程序知道有个新kitty创建出来了.并且kitty的owner和id也会放到event里去.最后函数返回ok.
-
     }
+
+    //ccc1.1
+    #[pallet::weight(0)]
+    pub fn transfer(origin: OriginFor<T>, new_owner: T::AccountId, kitty_id: KittyIndex) -> DispatchResult {
+        let who = ensure_signed(origin)?;
+        ensure!(Some(who.clone()) == Owner::<T>::get(kitty_id), Error::<T>::NotOwner);
+        Owner::<T>::insert(kitty_id, Some(new_owner.clone()));
+        Self::deposit_event(Event::KittyTransfer(who, new_owner, kitty_id));
+        Ok(())
+    }
+    //ccc1.1,1810-2014,实现transfer,只需要更新owner即可.ensure!行 通过kittyid确认发交易者是否是owner,如果是再往下执行.最后通过1.2和1.3加入error和event信息.
+
+    // ccc2.1
+    #[pallet::weight(0)]
+    pub fn breed(origin: OriginFor<T>, kitty_id_1: KittyIndex, kitty_id_2: KittyIndex) -> DispatchResult {
+        let who = ensure_signed(origin)?;
+        ensure!(kitty_id_1 != kitty_id_2, Error::<T>::SameParentIndex); //1
+
+        let kitty1 = Self::kitties(kitty_id_1).ok_or(Error::<T>::InvalidKittyIndex)?; //2
+        let kitty2 = Self::kitties(kitty_id_2).ok_or(Error::<T>::InvalidKittyIndex)?; //3
+
+        let kitty_id = match Self::kitties_count() {
+            Some(id) => {
+                ensure!(id != KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
+                id
+            },
+            None => {
+                1
+            }
+        };  //4
+
+        let dna_1 = kitty1.0;
+        let dna_2 = kitty2.0;
+
+        let selector = Self::random_value(&who);
+        let mut new_dna = [0u8; 16];
+
+        for i in 0..dna_1.len() {
+            new_dna[i] = (selector[i] & dna_1[i]) | (!selector[i] & dna_2[i]);
+        } //5
+
+        Kitties::<T>::insert(kitty_id, Some(Kitty(new_dna)));
+
+        Owner::<T>::insert(kitty_id, Some(who.clone()));
+
+        KittiesCount::<T>::put(kitty_id + 1); 
+        
+        Self::deposit_event(Event::KittyCreate(who, kitty_id));
+
+        Ok(()) //6
+    }
+    // ccc2.1,2014- ,繁殖的方法,指定两个kitty作为parents.并在方法里产生一个子kitty.子kitty的dna可以做一些随机和混淆.子kitty会获取两个parent的基因,但每次产生的都大概率不一样呀.
+    // 为了避免两个parent相同,1行处理了下.2,3行判断两个index对应的值确实已经存在. 4部分根据kittes_count得到id. 5部分根据两个parent的dna去做一个混淆,得到child的dna数据(2311-2411).
+    // 6部分,当有了数据后把它们存放在链上.包括dna数据,owner,并update kittycount.最后抛出event并返回ok.
+
+
     }
 
     impl<T: Config> Pallet<T> {
