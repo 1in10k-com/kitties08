@@ -152,9 +152,9 @@ pub mod pallet {
 
         Ok(()) //6
     }
-    // ccc2.1,2014- ,繁殖的方法,指定两个kitty作为parents.并在方法里产生一个子kitty.子kitty的dna可以做一些随机和混淆.子kitty会获取两个parent的基因,但每次产生的都大概率不一样呀.
+    // ccc2.1,2014-2540 ,繁殖的方法,指定两个kitty作为parents.并在方法里产生一个子kitty.子kitty的dna可以做一些随机和混淆.子kitty会获取两个parent的基因,但每次产生的都大概率不一样呀.
     // 为了避免两个parent相同,1行处理了下.2,3行判断两个index对应的值确实已经存在. 4部分根据kittes_count得到id. 5部分根据两个parent的dna去做一个混淆,得到child的dna数据(2311-2411).
-    // 6部分,当有了数据后把它们存放在链上.包括dna数据,owner,并update kittycount.最后抛出event并返回ok.
+    // 6部分,当有了数据后把它们存放在链上.包括dna数据,owner,并update kittycount.最后抛出event并返回ok. 之后通过ccc2.2添加错误.
 
 
     }
